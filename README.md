@@ -1,8 +1,31 @@
 # Modular Game Engine
 
-**Um protótipo open source de jogo de PC focado em comunidade e mods.**
+<p align="center">
+  <img src="docs/assets/stickers/sticker-adventurer.png" width="72" alt="Aventureiro" />
+  &nbsp;
+  <img src="docs/assets/stickers/sticker-slime.png" width="72" alt="Slime" />
+  &nbsp;
+  <img src="docs/assets/stickers/sticker-heart.png" width="72" alt="Coração" />
+  &nbsp;
+  <img src="docs/assets/stickers/sticker-chest.png" width="72" alt="Baú" />
+  &nbsp;
+  <img src="docs/assets/stickers/sticker-block.png" width="72" alt="Bloco" />
+  &nbsp;
+  <img src="docs/assets/stickers/sticker-tank.png" width="72" alt="Tanque" />
+</p>
 
-Mistura a fantasia de um ARPG ( Digamos, o espírito de *Diablo* ), o controle e a leitura tática de um RTS (*StarCraft*), e a liberdade de esquadrões de um sandbox (*Kenshi*) — com uma regra de ouro:
+<p align="center">
+  <strong>Um protótipo open source de jogo de PC focado em comunidade e mods.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/dreadpiratejhonatan/game/actions"><img src="https://img.shields.io/github/actions/workflow/status/dreadpiratejhonatan/game/ci.yml?branch=main&label=CI&style=flat-square" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT" /></a>
+  <a href="docs/MODDING.md"><img src="https://img.shields.io/badge/mods-first-orange?style=flat-square" alt="Mods first" /></a>
+  <a href="https://github.com/dreadpiratejhonatan/game/issues"><img src="https://img.shields.io/badge/roadmap-issues-blue?style=flat-square" alt="Roadmap" /></a>
+</p>
+
+Mistura a fantasia de um ARPG (o espírito de *Diablo*), o controle e a leitura tática de um RTS (*StarCraft*), e a liberdade de esquadrões de um sandbox (*Kenshi*) — com uma regra de ouro:
 
 > **O conteúdo não mora no código. Mora nos mods.**
 
@@ -12,7 +35,11 @@ O jogo é gratuito por natureza do projeto (MIT), feito para ser estendido por q
 
 ## Por que este projeto existe
 
+<img src="docs/assets/stickers/sticker-chest.png" width="40" align="left" alt="" />
+
 A maioria dos jogos “aceita mods” como um extra. Aqui o caminho é o inverso:
+
+<br clear="all" />
 
 | Em jogos tradicionais | Aqui |
 |----------------------|------|
@@ -24,18 +51,25 @@ Queremos um motor **suave de jogar**, **claro de manter** e **extremamente adapt
 
 ### Visão de gameplay
 
-- **ARPG** — personagem principal, clique para mover/atacar, progressão futura
-- **RTS** — leitura espacial, cursor de comando, combate em grupo, facções
-- **Sandbox de esquadrões** — aliados, ordens, mundo que continua quando você não olha
+| | |
+|:---:|:---|
+| <img src="docs/assets/stickers/sticker-adventurer.png" width="48" alt="" /> | **ARPG** — personagem principal, clique para mover/atacar, progressão futura |
+| <img src="docs/assets/stickers/sticker-tank.png" width="48" alt="" /> | **RTS** — leitura espacial, cursor de comando, combate em grupo, facções |
+| <img src="docs/assets/stickers/sticker-slime.png" width="48" alt="" /> | **Sandbox de esquadrões** — aliados, ordens, mundo que continua sem você |
 
 ### Visão de arte (futura)
 
+<img src="docs/assets/stickers/sticker-block.png" width="36" alt="" />
 2D pixel art com leitura lateral/isométrica (referência de energia: *Metal Slug*).  
 Hoje o protótipo usa sprites procedurais de propósito — a arquitetura já espera arte real depois.
 
 ---
 
 ## Estado atual (protótipo jogável)
+
+<img src="docs/assets/stickers/sticker-heart.png" width="40" alt="" /> Já dá para entrar no mundo, andar, lutar e carregar mods.
+
+<br />
 
 Já funciona:
 
@@ -86,6 +120,11 @@ Deve imprimir `SMOKE OK`. Isso também roda no GitHub Actions a cada push/PR.
 
 ## Mods em 60 segundos
 
+<p>
+  <img src="docs/assets/stickers/sticker-slime.png" width="48" alt="" />
+  <img src="docs/assets/stickers/sticker-chest.png" width="48" alt="" />
+</p>
+
 1. Copie `data/user_mods/example_hostile_blob/`
 2. Renomeie a pasta e edite `mod.json` + `units.json`
 3. `dotnet run` — o console confirma o carregamento
@@ -134,6 +173,7 @@ O `GameEngine` só orquestra — não acumula regra de jogo.
 
 ## Roadmap (epics)
 
+<img src="docs/assets/stickers/sticker-adventurer.png" width="36" alt="" />
 O que vem pela frente está aberto na aba de issues — começando por loot, inventário, esquadrões, HUD, save/load e mais tipos de conteúdo modável.
 
 Quer ajudar? Pegue uma issue, abra uma branch `feature/...` e mande um PR. A `main` precisa continuar jogável.
@@ -144,5 +184,13 @@ Quer ajudar? Pegue uma issue, abra uma branch `feature/...` e mande um PR. A `ma
 
 [MIT](LICENSE) — use, modifique, redistribua, faça forks e mods.
 
-O intuito não é proteger o jogo da comunidade.  
-É **construir o jogo *com* a comunidade**.
+<p align="center">
+  <img src="docs/assets/stickers/sticker-block.png" width="56" alt="" />
+  <img src="docs/assets/stickers/sticker-heart.png" width="56" alt="" />
+  <img src="docs/assets/stickers/sticker-chest.png" width="56" alt="" />
+</p>
+
+<p align="center">
+  O intuito não é proteger o jogo da comunidade.<br />
+  É <strong>construir o jogo <em>com</em> a comunidade</strong>.
+</p>
