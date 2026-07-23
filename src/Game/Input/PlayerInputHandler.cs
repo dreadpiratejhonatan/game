@@ -91,8 +91,8 @@ public class PlayerInputHandler
         {
             combat.Target = null;
             var destination = worldClick - render.Size / 2f;
-            destination.X = Math.Clamp(destination.X, 8, _camera.WorldWidth - render.Size.X - 8);
-            destination.Y = Math.Clamp(destination.Y, 8, _camera.WorldHeight - render.Size.Y - 8);
+            destination.X = Math.Clamp(destination.X, 8, Math.Max(8, _camera.WorldWidth - render.Size.X - 8));
+            destination.Y = Math.Clamp(destination.Y, 8, Math.Max(8, _camera.WorldHeight - render.Size.Y - 8));
             moveTarget.Target = destination;
         }
     }

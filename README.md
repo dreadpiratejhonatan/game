@@ -27,6 +27,9 @@ Ou abra `ModularGameEngine.sln` no Visual Studio e pressione F5.
 dotnet run -- --smoke
 ```
 
+CI roda isso automaticamente em push/PR para `main`.  
+Cena de boot: `data/base_mod/scenes/baseline.json` (posições fixas, reproduzível).
+
 ## Filosofia
 
 - **Open source** — licença MIT (`LICENSE`)

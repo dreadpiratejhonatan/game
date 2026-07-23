@@ -12,9 +12,6 @@ using ModularGameEngine.Mods;
 
 namespace ModularGameEngine.Engine.Core;
 
-/// <summary>
-/// Orquestrador fino do game loop.
-/// </summary>
 public class GameEngine : Microsoft.Xna.Framework.Game
 {
     private readonly GraphicsDeviceManager _graphics;
@@ -23,6 +20,7 @@ public class GameEngine : Microsoft.Xna.Framework.Game
     private World _world = null!;
     private ModManager _modManager = null!;
     private Camera2D _camera = null!;
+    private WorldBounds _worldBounds = null!;
     private DebugState _debug = null!;
     private RenderSystem _renderSystem = null!;
     private UnitFactory _unitFactory = null!;
@@ -55,21 +53,23 @@ public class GameEngine : Microsoft.Xna.Framework.Game
         _modManager = new ModManager("data");
         _modManager.LoadMods();
 
+        _worldBounds = new WorldBounds
+        {
+            Width = SystemRegistrar.DefaultWorldWidth,
+            Height = SystemRegistrar.DefaultWorldHeight
+        };
+
         _camera = new Camera2D
         {
             ViewportWidth = SystemRegistrar.ViewportWidth,
             ViewportHeight = SystemRegistrar.ViewportHeight,
-            WorldWidth = SystemRegistrar.WorldWidth,
-            WorldHeight = SystemRegistrar.WorldHeight,
-            Position = new Vector2(
-                SystemRegistrar.WorldWidth / 2f - SystemRegistrar.ViewportWidth / 2f,
-                SystemRegistrar.WorldHeight / 2f - SystemRegistrar.ViewportHeight / 2f)
+            WorldWidth = _worldBounds.Width,
+            WorldHeight = _worldBounds.Height
         };
-        _camera.ClampToWorld();
 
         _debug = new DebugState();
         _world = new World();
-        SystemRegistrar.RegisterAll(_world, _camera);
+        SystemRegistrar.RegisterAll(_world, _camera, _worldBounds);
 
         base.Initialize();
     }
@@ -84,15 +84,26 @@ public class GameEngine : Microsoft.Xna.Framework.Game
         _input = new PlayerInputHandler(_world, _modManager, _unitFactory, _camera, _debug);
         _cursor = new GameCursor(GraphicsDevice);
 
-        _unitFactory.SpawnInitialScene(
-            _modManager,
-            new Vector2(SystemRegistrar.WorldWidth / 2f, SystemRegistrar.WorldHeight / 2f),
-            SystemRegistrar.WorldWidth,
-            SystemRegistrar.WorldHeight);
+        var scene = _unitFactory.SpawnScene(_modManager, "baseline");
+        if (scene != null)
+        {
+            _worldBounds.Set(scene.WorldWidth, scene.WorldHeight);
+            _camera.WorldWidth = _worldBounds.Width;
+            _camera.WorldHeight = _worldBounds.Height;
+
+            if (scene.Player != null)
+            {
+                _camera.Position = new Vector2(
+                    scene.Player.X - _camera.ViewportWidth / 2f,
+                    scene.Player.Y - _camera.ViewportHeight / 2f);
+            }
+        }
+
+        _camera.ClampToWorld();
 
         Console.WriteLine(
             $"Mundo {_camera.WorldWidth}x{_camera.WorldHeight} | " +
-            $"{_world.GetEntities().Count()} entidades | {_modManager.LoadedMods.Count} mod(s).");
+            $"{_world.GetEntities().Count()} entidades | {_modManager.LoadedMods.Count} mod(s) | {_modManager.Scenes.Count} cena(s).");
     }
 
     protected override void Update(GameTime gameTime)

@@ -1,0 +1,23 @@
+{
+  "id": "baseline",
+  "name": "Baseline Arena",
+  "world_width": 3200,
+  "world_height": 2400,
+  "player": {
+    "unit_id": "soldier_basic",
+    "x": 1600,
+    "y": 1200
+  },
+  "spawns": [
+    { "unit_id": "archer_basic", "x": 1450, "y": 1100 },
+    { "unit_id": "archer_basic", "x": 1700, "y": 1050 },
+    { "unit_id": "soldier_basic", "x": 1500, "y": 1350, "faction": "ally" },
+    { "unit_id": "soldier_basic", "x": 1750, "y": 1400, "faction": "ally" },
+    { "unit_id": "tank_heavy", "x": 2100, "y": 1200 },
+    { "unit_id": "tank_heavy", "x": 2300, "y": 1400 },
+    { "unit_id": "scout_fast", "x": 2000, "y": 1000 },
+    { "unit_id": "scout_fast", "x": 2200, "y": 1100 },
+    { "unit_id": "scout_fast", "x": 2400, "y": 1250 },
+    { "unit_id": "tank_heavy", "x": 1900, "y": 1500 }
+  ]
+}

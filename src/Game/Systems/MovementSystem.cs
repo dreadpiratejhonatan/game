@@ -1,22 +1,18 @@
 using Microsoft.Xna.Framework;
+using ModularGameEngine.Engine.Core;
 using ModularGameEngine.Engine.ECS;
 using ModularGameEngine.Game.Components;
 
 namespace ModularGameEngine.Game.Systems;
 
-/// <summary>
-/// Move as unidades em direção ao MoveTarget e mantém dentro dos limites do mundo.
-/// </summary>
 public class MovementSystem : ISystem
 {
-    private readonly int _worldWidth;
-    private readonly int _worldHeight;
+    private readonly WorldBounds _bounds;
     private const float Margin = 8f;
 
-    public MovementSystem(int worldWidth, int worldHeight)
+    public MovementSystem(WorldBounds bounds)
     {
-        _worldWidth = worldWidth;
-        _worldHeight = worldHeight;
+        _bounds = bounds;
     }
 
     public void Update(IEnumerable<Entity> entities, float deltaTime)
@@ -45,8 +41,8 @@ public class MovementSystem : ISystem
                 transform.Position += toTarget / distance * step;
             }
 
-            var maxX = _worldWidth - (render?.Size.X ?? 32) - Margin;
-            var maxY = _worldHeight - (render?.Size.Y ?? 32) - Margin;
+            var maxX = _bounds.Width - (render?.Size.X ?? 32) - Margin;
+            var maxY = _bounds.Height - (render?.Size.Y ?? 32) - Margin;
             transform.Position = new Vector2(
                 Math.Clamp(transform.Position.X, Margin, maxX),
                 Math.Clamp(transform.Position.Y, Margin, maxY));

@@ -1,27 +1,21 @@
 using Microsoft.Xna.Framework;
+using ModularGameEngine.Engine.Core;
 using ModularGameEngine.Engine.ECS;
 using ModularGameEngine.Game.Components;
 
 namespace ModularGameEngine.Game.Systems;
 
-/// <summary>
-/// Comportamento ambiente: unidades ociosas escolhem um ponto próximo aleatório
-/// e caminham até ele de tempos em tempos. Unidades selecionadas pelo jogador
-/// ficam paradas aguardando ordens.
-/// </summary>
 public class WanderSystem : ISystem
 {
     private readonly Random _random = new();
-    private readonly int _worldWidth;
-    private readonly int _worldHeight;
+    private readonly WorldBounds _bounds;
 
     private const float WanderRadius = 140f;
     private const int Margin = 40;
 
-    public WanderSystem(int worldWidth, int worldHeight)
+    public WanderSystem(WorldBounds bounds)
     {
-        _worldWidth = worldWidth;
-        _worldHeight = worldHeight;
+        _bounds = bounds;
     }
 
     public void Update(IEnumerable<Entity> entities, float deltaTime)
@@ -33,7 +27,6 @@ public class WanderSystem : ISystem
             var transform = entity.GetComponent<TransformComponent>();
             if (wander == null || moveTarget == null || transform == null) continue;
 
-            // Personagem principal e unidades em combate não vagam
             if (entity.HasComponent<PlayerControlledComponent>()) continue;
             if (entity.GetComponent<CombatTargetComponent>()?.Target is { IsActive: true }) continue;
 
@@ -45,8 +38,8 @@ public class WanderSystem : ISystem
                 (float)(_random.NextDouble() * 2 - 1) * WanderRadius);
 
             var destination = transform.Position + offset;
-            destination.X = Math.Clamp(destination.X, Margin, _worldWidth - Margin);
-            destination.Y = Math.Clamp(destination.Y, Margin, _worldHeight - Margin);
+            destination.X = Math.Clamp(destination.X, Margin, _bounds.Width - Margin);
+            destination.Y = Math.Clamp(destination.Y, Margin, _bounds.Height - Margin);
 
             moveTarget.Target = destination;
             wander.Cooldown = 1.5f + (float)_random.NextDouble() * 4f;

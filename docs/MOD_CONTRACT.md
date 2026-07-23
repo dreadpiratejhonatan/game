@@ -10,10 +10,12 @@ data/
   base_mod/          # oficial, carrega primeiro
     mod.json         # recomendado
     units.json
+    scenes/          # cenas (baseline.json, etc.)
   user_mods/
     <mod_id>/
       mod.json       # obrigatório para mods de comunidade
       units.json     # opcional
+      scenes/        # opcional
 ```
 
 ## Garantias (não quebrar sem major)
@@ -42,6 +44,20 @@ data/
 | `visual.width` / `height` | number | sim |
 | `visual.color` | `#RRGGBB` | sim |
 | `visual.shape` | `rectangle` \| `circle` | não |
+
+## scenes/*.json — campos estáveis
+
+| Campo | Tipo | Obrigatório |
+|-------|------|-------------|
+| `id` | string | sim |
+| `name` | string | sim |
+| `world_width` / `world_height` | number | não (default 3200×2400) |
+| `player.unit_id` + `x`/`y` | — | sim para cena jogável |
+| `spawns[]` | lista | não |
+| `spawns[].unit_id` + `x`/`y` | — | sim por spawn |
+| `spawns[].faction` | string | não (override opcional) |
+
+Cena oficial de teste: `baseline`.
 
 ## Extensões futuras (não estáveis ainda)
 

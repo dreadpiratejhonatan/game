@@ -3,9 +3,6 @@ using ModularGameEngine.Mods;
 
 namespace ModularGameEngine;
 
-/// <summary>
-/// Ponto de entrada. Use --smoke para validar mods sem abrir a janela.
-/// </summary>
 public static class Program
 {
     public static int Main(string[] args)
@@ -18,9 +15,6 @@ public static class Program
         return 0;
     }
 
-    /// <summary>
-    /// Smoke check headless: carrega mods e valida conteúdo mínimo.
-    /// </summary>
     private static int RunSmoke()
     {
         Console.WriteLine("=== SMOKE CHECK ===");
@@ -36,19 +30,29 @@ public static class Program
                 return 1;
             }
 
-            if (mods.UnitDefinitions.Count < 1)
-            {
-                Console.Error.WriteLine("FAIL: nenhuma unidade registrada.");
-                return 1;
-            }
-
             if (mods.GetUnitDefinition("soldier_basic") == null)
             {
                 Console.Error.WriteLine("FAIL: soldier_basic ausente no base_mod.");
                 return 1;
             }
 
-            Console.WriteLine($"SMOKE OK — {mods.LoadedMods.Count} mod(s), {mods.UnitDefinitions.Count} unidade(s).");
+            var scene = mods.GetScene("baseline");
+            if (scene == null)
+            {
+                Console.Error.WriteLine("FAIL: cena baseline ausente.");
+                return 1;
+            }
+
+            var missing = mods.ValidateScene(scene);
+            if (missing.Count > 0)
+            {
+                Console.Error.WriteLine($"FAIL: cena baseline referencia unidades inexistentes: {string.Join(", ", missing)}");
+                return 1;
+            }
+
+            Console.WriteLine(
+                $"SMOKE OK — {mods.LoadedMods.Count} mod(s), {mods.UnitDefinitions.Count} unidade(s), {mods.Scenes.Count} cena(s).");
+            Console.WriteLine($"  scene: {scene.Id} ({scene.Spawns.Count} spawns)");
             foreach (var mod in mods.LoadedMods)
                 Console.WriteLine($"  - {mod.Id} v{mod.Version}");
 

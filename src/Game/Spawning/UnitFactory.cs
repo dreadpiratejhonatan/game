@@ -10,8 +10,7 @@ using ModularGameEngine.Mods.Models;
 namespace ModularGameEngine.Game.Spawning;
 
 /// <summary>
-/// Cria entidades a partir de UnitDefinition (data-driven).
-/// Ponto único de spawn — novas features de criação de unidade passam por aqui.
+/// Cria entidades a partir de UnitDefinition / cenas JSON.
 /// </summary>
 public class UnitFactory
 {
@@ -27,38 +26,73 @@ public class UnitFactory
     }
 
     /// <summary>
-    /// Spawna o player no centro e algumas unidades de cada tipo definido nos mods.
+    /// Spawna a cena baseline (ou fallback aleatório se a cena não existir).
     /// </summary>
-    public void SpawnInitialScene(
-        ModManager mods,
-        Vector2 playerPosition,
-        int worldWidth,
-        int worldHeight,
-        int copiesPerUnitType = 2)
+    public SceneDefinition? SpawnScene(ModManager mods, string sceneId = "baseline")
     {
-        var playerDef = mods.GetUnitDefinition("soldier_basic")
-                        ?? mods.UnitDefinitions.FirstOrDefault();
-
-        if (playerDef != null)
+        var scene = mods.GetScene(sceneId);
+        if (scene == null)
         {
-            Spawn(playerDef, playerPosition, isPlayer: true);
-            Console.WriteLine($"[PLAYER] {playerDef.Name} spawned.");
+            Console.WriteLine($"[SCENE] AVISO: cena '{sceneId}' não encontrada — fallback aleatório.");
+            SpawnRandomFallback(mods, 3200, 2400);
+            return null;
         }
+
+        var missing = mods.ValidateScene(scene);
+        if (missing.Count > 0)
+        {
+            Console.WriteLine($"[SCENE] AVISO: unidades ausentes na cena: {string.Join(", ", missing)}");
+        }
+
+        Console.WriteLine($"[SCENE] Carregando '{scene.Name}' ({scene.Id}) — {scene.WorldWidth}x{scene.WorldHeight}");
+
+        if (scene.Player != null)
+        {
+            var playerDef = mods.GetUnitDefinition(scene.Player.UnitId);
+            if (playerDef != null)
+            {
+                Spawn(playerDef, new Vector2(scene.Player.X, scene.Player.Y), isPlayer: true);
+                Console.WriteLine($"[PLAYER] {playerDef.Name} at ({scene.Player.X:0}, {scene.Player.Y:0})");
+            }
+        }
+
+        var spawned = 0;
+        foreach (var actor in scene.Spawns)
+        {
+            var def = mods.GetUnitDefinition(actor.UnitId);
+            if (def == null) continue;
+
+            Spawn(def, new Vector2(actor.X, actor.Y), isPlayer: false, factionOverride: actor.Faction);
+            spawned++;
+        }
+
+        Console.WriteLine($"[SCENE] {spawned} NPCs posicionados.");
+        return scene;
+    }
+
+    private void SpawnRandomFallback(ModManager mods, int worldWidth, int worldHeight)
+    {
+        var playerDef = mods.GetUnitDefinition("soldier_basic") ?? mods.UnitDefinitions.FirstOrDefault();
+        if (playerDef != null)
+            Spawn(playerDef, new Vector2(worldWidth / 2f, worldHeight / 2f), isPlayer: true);
 
         var margin = 80;
         foreach (var unitDef in mods.UnitDefinitions)
         {
-            for (int i = 0; i < copiesPerUnitType; i++)
+            for (int i = 0; i < 2; i++)
             {
-                var position = new Vector2(
-                    _random.Next(margin, Math.Max(margin + 1, worldWidth - margin)),
-                    _random.Next(margin, Math.Max(margin + 1, worldHeight - margin)));
-                Spawn(unitDef, position, isPlayer: false);
+                Spawn(unitDef, new Vector2(
+                    _random.Next(margin, worldWidth - margin),
+                    _random.Next(margin, worldHeight - margin)));
             }
         }
     }
 
-    public Entity Spawn(UnitDefinition unitDef, Vector2 position, bool isPlayer = false)
+    public Entity Spawn(
+        UnitDefinition unitDef,
+        Vector2 position,
+        bool isPlayer = false,
+        string? factionOverride = null)
     {
         var entity = _world.CreateEntity();
 
@@ -84,7 +118,11 @@ public class UnitFactory
         entity.AddComponent(new ParticleEmitterComponent());
         entity.AddComponent(new CombatTargetComponent());
         entity.AddComponent(new CombatStateComponent());
-        entity.AddComponent(new TeamComponent(isPlayer ? "player" : unitDef.Faction));
+
+        var faction = isPlayer
+            ? "player"
+            : (factionOverride ?? unitDef.Faction);
+        entity.AddComponent(new TeamComponent(faction));
 
         if (isPlayer)
         {

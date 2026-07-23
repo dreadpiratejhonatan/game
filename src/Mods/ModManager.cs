@@ -6,7 +6,6 @@ namespace ModularGameEngine.Mods;
 /// <summary>
 /// Carrega conteúdo data-driven de data/base_mod e data/user_mods.
 /// Ordem: base primeiro; depois cada pasta em user_mods (ordem alfabética).
-/// Mods com override_base=true substituem unidades de mesmo id.
 /// </summary>
 public class ModManager
 {
@@ -19,9 +18,11 @@ public class ModManager
 
     private readonly string _dataPath;
     private readonly Dictionary<string, UnitDefinition> _unitsById = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, SceneDefinition> _scenesById = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<ModManifest> _loadedMods = new();
 
     public IReadOnlyList<UnitDefinition> UnitDefinitions => _unitsById.Values.ToList();
+    public IReadOnlyList<SceneDefinition> Scenes => _scenesById.Values.ToList();
     public IReadOnlyList<ModManifest> LoadedMods => _loadedMods.AsReadOnly();
 
     public ModManager(string dataPath = "data")
@@ -33,6 +34,7 @@ public class ModManager
     {
         Console.WriteLine("[ModManager] Iniciando carregamento de mods...");
         _unitsById.Clear();
+        _scenesById.Clear();
         _loadedMods.Clear();
 
         LoadModFolder(Path.Combine(_dataPath, "base_mod"), isBase: true);
@@ -42,7 +44,6 @@ public class ModManager
         {
             foreach (var modDir in Directory.GetDirectories(userModsRoot).OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
             {
-                // Ignora pastas que começam com _ ou .
                 var name = Path.GetFileName(modDir);
                 if (name.StartsWith('_') || name.StartsWith('.'))
                     continue;
@@ -57,7 +58,7 @@ public class ModManager
         }
 
         Console.WriteLine(
-            $"[ModManager] Concluído. {_loadedMods.Count} mod(s), {_unitsById.Count} unidade(s) ativas.");
+            $"[ModManager] Concluído. {_loadedMods.Count} mod(s), {_unitsById.Count} unidade(s), {_scenesById.Count} cena(s).");
     }
 
     private void LoadModFolder(string modPath, bool isBase)
@@ -80,9 +81,8 @@ public class ModManager
         Console.WriteLine($"[ModManager] Carregando: {manifest.Name} ({manifest.Id}) v{manifest.Version}");
 
         LoadUnits(modPath, manifest, isBase);
+        LoadScenes(modPath, manifest, isBase);
         _loadedMods.Add(manifest);
-
-        // Extensível: LoadItems(modPath, manifest); LoadSkills(modPath, manifest);
     }
 
     private ModManifest? ReadManifest(string modPath)
@@ -156,15 +156,76 @@ public class ModManager
         }
     }
 
+    private void LoadScenes(string modPath, ModManifest manifest, bool isBase)
+    {
+        var scenesDir = Path.Combine(modPath, "scenes");
+        if (!Directory.Exists(scenesDir))
+            return;
+
+        var loaded = 0;
+        foreach (var file in Directory.GetFiles(scenesDir, "*.json").OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var scene = JsonSerializer.Deserialize<SceneDefinition>(File.ReadAllText(file), JsonOptions);
+                if (scene == null || string.IsNullOrWhiteSpace(scene.Id))
+                {
+                    Console.WriteLine($"[ModManager] AVISO: cena inválida em {file}");
+                    continue;
+                }
+
+                if (_scenesById.ContainsKey(scene.Id) && (isBase || !manifest.OverrideBase))
+                {
+                    Console.WriteLine($"[ModManager] AVISO: cena duplicada '{scene.Id}' ignorada.");
+                    continue;
+                }
+
+                _scenesById[scene.Id] = scene;
+                loaded++;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ModManager] ERRO ao carregar {file}: {ex.Message}");
+            }
+        }
+
+        if (loaded > 0)
+            Console.WriteLine($"[ModManager]   scenes/ → {loaded} cena(s)");
+    }
+
     public UnitDefinition? GetUnitDefinition(string unitId)
     {
         _unitsById.TryGetValue(unitId, out var def);
         return def;
     }
 
+    public SceneDefinition? GetScene(string sceneId)
+    {
+        _scenesById.TryGetValue(sceneId, out var scene);
+        return scene;
+    }
+
     public UnitDefinition? GetRandomUnitDefinition(Random random)
     {
         if (_unitsById.Count == 0) return null;
         return _unitsById.Values.ElementAt(random.Next(_unitsById.Count));
+    }
+
+    /// <summary>
+    /// Valida se todos os unit_id referenciados na cena existem.
+    /// </summary>
+    public IReadOnlyList<string> ValidateScene(SceneDefinition scene)
+    {
+        var missing = new List<string>();
+        if (scene.Player != null && !_unitsById.ContainsKey(scene.Player.UnitId))
+            missing.Add(scene.Player.UnitId);
+
+        foreach (var spawn in scene.Spawns)
+        {
+            if (!_unitsById.ContainsKey(spawn.UnitId) && !missing.Contains(spawn.UnitId))
+                missing.Add(spawn.UnitId);
+        }
+
+        return missing;
     }
 }
