@@ -14,17 +14,22 @@ ModularGameEngine/
 │
 ├── src/
 │   ├── Engine/                      # Núcleo reutilizável (sem regras de ARPG)
-│   │   ├── Core/GameEngine.cs       # Orquestrador fino do loop
+│   │   ├── Core/
+│   │   │   ├── GameEngine.cs        # Orquestrador fino do loop
+│   │   │   └── Camera2D.cs          # Câmera / conversão tela↔mundo
 │   │   ├── ECS/                     # Entity, Component, System, World
 │   │   ├── Graphics/                # SpriteGenerator
 │   │   └── Util/                    # ColorUtil, helpers
 │   │
 │   ├── Game/                        # Gameplay específico
-│   │   ├── Bootstrap/               # SystemRegistrar (ordem dos sistemas)
+│   │   ├── Bootstrap/               # SystemRegistrar (viewport + mundo)
+│   │   ├── Debug/DebugState.cs      # F1 debug overlay / spawn
 │   │   ├── Components/              # Dados ECS
-│   │   ├── Systems/                 # Lógica ECS
-│   │   ├── Spawning/UnitFactory.cs  # Criação de entidades a partir de JSON
-│   │   └── Input/PlayerInputHandler.cs
+│   │   ├── Systems/                 # Inclui CameraSystem, Combat, etc.
+│   │   ├── Spawning/UnitFactory.cs
+│   │   └── Input/
+│   │       ├── PlayerInputHandler.cs
+│   │       └── GameCursor.cs
 │   │
 │   └── Mods/
 │       ├── ModManager.cs            # Loader (base + user_mods)

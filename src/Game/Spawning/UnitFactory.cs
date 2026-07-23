@@ -29,7 +29,12 @@ public class UnitFactory
     /// <summary>
     /// Spawna o player no centro e algumas unidades de cada tipo definido nos mods.
     /// </summary>
-    public void SpawnInitialScene(ModManager mods, Vector2 playerPosition, int copiesPerUnitType = 2)
+    public void SpawnInitialScene(
+        ModManager mods,
+        Vector2 playerPosition,
+        int worldWidth,
+        int worldHeight,
+        int copiesPerUnitType = 2)
     {
         var playerDef = mods.GetUnitDefinition("soldier_basic")
                         ?? mods.UnitDefinitions.FirstOrDefault();
@@ -40,11 +45,14 @@ public class UnitFactory
             Console.WriteLine($"[PLAYER] {playerDef.Name} spawned.");
         }
 
+        var margin = 80;
         foreach (var unitDef in mods.UnitDefinitions)
         {
             for (int i = 0; i < copiesPerUnitType; i++)
             {
-                var position = new Vector2(_random.Next(100, 1180), _random.Next(100, 620));
+                var position = new Vector2(
+                    _random.Next(margin, Math.Max(margin + 1, worldWidth - margin)),
+                    _random.Next(margin, Math.Max(margin + 1, worldHeight - margin)));
                 Spawn(unitDef, position, isPlayer: false);
             }
         }

@@ -1,39 +1,56 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using ModularGameEngine.Engine.Core;
 using ModularGameEngine.Engine.ECS;
 using ModularGameEngine.Game.Components;
+using ModularGameEngine.Game.Debug;
 using ModularGameEngine.Game.Spawning;
 using ModularGameEngine.Mods;
 
 namespace ModularGameEngine.Game.Input;
 
 /// <summary>
-/// Input do jogador: mover, atacar e spawn de debug.
-/// Isolado do GameEngine para facilitar novas ações (skills, inventário, etc.).
+/// Input do jogador: mover, atacar, toggle debug.
+/// Spawn aleatório só em modo debug (F1).
 /// </summary>
 public class PlayerInputHandler
 {
     private readonly World _world;
     private readonly ModManager _mods;
     private readonly UnitFactory _unitFactory;
+    private readonly Camera2D _camera;
+    private readonly DebugState _debug;
 
     private MouseState _previousMouse;
     private KeyboardState _previousKeyboard;
 
-    public PlayerInputHandler(World world, ModManager mods, UnitFactory unitFactory)
+    public PlayerInputHandler(
+        World world,
+        ModManager mods,
+        UnitFactory unitFactory,
+        Camera2D camera,
+        DebugState debug)
     {
         _world = world;
         _mods = mods;
         _unitFactory = unitFactory;
+        _camera = camera;
+        _debug = debug;
     }
 
-    /// <summary>
-    /// Processa input do frame. Retorna true se o jogo deve encerrar (ESC).
-    /// </summary>
+    /// <summary>Retorna true se o jogo deve encerrar (ESC).</summary>
     public bool Update(MouseState mouse, KeyboardState keyboard)
     {
         if (keyboard.IsKeyDown(Keys.Escape))
             return true;
+
+        if (keyboard.IsKeyDown(Keys.F1) && !_previousKeyboard.IsKeyDown(Keys.F1))
+        {
+            _debug.Enabled = !_debug.Enabled;
+            Console.WriteLine(_debug.Enabled
+                ? "[DEBUG] ON — Espaço spawna unidades"
+                : "[DEBUG] OFF — spawn desativado");
+        }
 
         HandleClick(mouse);
         HandleDebugSpawn(keyboard, mouse);
@@ -58,8 +75,8 @@ public class PlayerInputHandler
         var playerTeam = player.GetComponent<TeamComponent>();
         if (moveTarget == null || combat == null || render == null || playerTeam == null) return;
 
-        var click = mouse.Position;
-        var clickedEnemy = FindHostileAtPoint(click, playerTeam.Faction);
+        var worldClick = _camera.ScreenToWorld(mouse.Position);
+        var clickedEnemy = FindHostileAtWorldPoint(worldClick, playerTeam.Faction);
 
         if (clickedEnemy != null)
         {
@@ -73,21 +90,27 @@ public class PlayerInputHandler
         else
         {
             combat.Target = null;
-            moveTarget.Target = click.ToVector2() - render.Size / 2f;
+            var destination = worldClick - render.Size / 2f;
+            destination.X = Math.Clamp(destination.X, 8, _camera.WorldWidth - render.Size.X - 8);
+            destination.Y = Math.Clamp(destination.Y, 8, _camera.WorldHeight - render.Size.Y - 8);
+            moveTarget.Target = destination;
         }
     }
 
     private void HandleDebugSpawn(KeyboardState keyboard, MouseState mouse)
     {
+        if (!_debug.Enabled) return;
         if (!keyboard.IsKeyDown(Keys.Space) || _previousKeyboard.IsKeyDown(Keys.Space))
             return;
 
-        _unitFactory.SpawnRandom(_mods, mouse.Position.ToVector2());
+        var worldPos = _camera.ScreenToWorld(mouse.Position.ToVector2());
+        _unitFactory.SpawnRandom(_mods, worldPos);
     }
 
-    private Entity? FindHostileAtPoint(Point point, string playerFaction)
+    private Entity? FindHostileAtWorldPoint(Vector2 worldPoint, string playerFaction)
     {
         Entity? hit = null;
+        var point = new Point((int)worldPoint.X, (int)worldPoint.Y);
 
         foreach (var entity in _world.GetEntities())
         {

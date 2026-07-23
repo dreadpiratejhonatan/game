@@ -1,15 +1,15 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using ModularGameEngine.Engine.Core;
 using ModularGameEngine.Engine.ECS;
 using ModularGameEngine.Engine.Graphics;
 using ModularGameEngine.Game.Components;
+using ModularGameEngine.Game.Debug;
 
 namespace ModularGameEngine.Game.Systems;
 
 /// <summary>
-/// Renderiza o mundo: terreno em tiles, sombras, sprites pixel-art animados,
-/// barras de HP, indicadores de seleção e a caixa de seleção do mouse.
-/// Unidades sem sprite caem no fallback de forma geométrica.
+/// Renderiza o mundo (com câmera) e a UI em espaço de tela.
 /// </summary>
 public class RenderSystem : ISystem
 {
@@ -19,8 +19,8 @@ public class RenderSystem : ISystem
     private readonly Texture2D _terrainTile;
     private readonly Texture2D _shadowTexture;
     private readonly Texture2D _particleTexture;
-    
-    private float _moveMarkerPulse = 0f;
+
+    private float _moveMarkerPulse;
 
     public RenderSystem(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, SpriteGenerator spriteGenerator)
     {
@@ -40,24 +40,25 @@ public class RenderSystem : ISystem
         _moveMarkerPulse += deltaTime * 4f;
     }
 
-    public void Draw(IEnumerable<Entity> entities, Rectangle? selectionBox)
+    public void Draw(IEnumerable<Entity> entities, Camera2D camera, DebugState debug)
     {
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        // --- Mundo (afetado pela câmera) ---
+        _spriteBatch.Begin(
+            samplerState: SamplerState.PointClamp,
+            transformMatrix: camera.GetViewMatrix());
 
-        DrawTerrain();
+        DrawTerrain(camera);
 
-        // Ordena por Y para dar noção de profundidade (quem está mais "embaixo" fica na frente)
         var entityList = entities
             .Where(e => e.HasComponent<TransformComponent>() && e.HasComponent<RenderComponent>())
             .OrderBy(e => e.GetComponent<TransformComponent>()!.Position.Y)
             .ToList();
 
-        // Partículas (atrás das unidades)
         foreach (var entity in entityList)
         {
             var emitter = entity.GetComponent<ParticleEmitterComponent>();
             if (emitter == null) continue;
-            
+
             foreach (var particle in emitter.Particles)
             {
                 var rect = new Rectangle(
@@ -68,7 +69,6 @@ public class RenderSystem : ISystem
             }
         }
 
-        // Marcador de destino do personagem principal (pulsante)
         foreach (var entity in entityList)
         {
             var moveTarget = entity.GetComponent<MoveTargetComponent>();
@@ -76,8 +76,7 @@ public class RenderSystem : ISystem
             if (moveTarget?.Target == null || render == null) continue;
             if (!entity.HasComponent<PlayerControlledComponent>()) continue;
 
-            var targetCenter = moveTarget.Target.Value + render.Size / 2f;
-            DrawMoveMarkerAnimated(targetCenter);
+            DrawMoveMarkerAnimated(moveTarget.Target.Value + render.Size / 2f);
         }
 
         foreach (var entity in entityList)
@@ -89,6 +88,12 @@ public class RenderSystem : ISystem
                 (int)transform.Position.X, (int)transform.Position.Y,
                 (int)render.Size.X, (int)render.Size.Y);
 
+            // Culling simples
+            var cullBounds = bounds;
+            cullBounds.Inflate(48, 48);
+            if (!camera.VisibleWorldBounds.Intersects(cullBounds))
+                continue;
+
             var isSelected = entity.GetComponent<SelectableComponent>()?.IsSelected == true;
             var team = entity.GetComponent<TeamComponent>();
             var isEnemy = team?.Faction == "enemy";
@@ -96,7 +101,6 @@ public class RenderSystem : ISystem
                 e.GetComponent<CombatTargetComponent>()?.Target == entity
                 && e.HasComponent<PlayerControlledComponent>());
 
-            // Sombra no chão
             var shadowRect = new Rectangle(
                 bounds.Center.X - (bounds.Width + 10) / 2,
                 bounds.Bottom - 5,
@@ -104,33 +108,20 @@ public class RenderSystem : ISystem
                 Math.Max(8, bounds.Width / 3));
             _spriteBatch.Draw(_shadowTexture, shadowRect, Color.White);
 
-            // Anel: player (verde), inimigo (vermelho), alvo do player (vermelho forte)
             if (isSelected)
-            {
-                var ring = new Rectangle(bounds.X - 5, bounds.Bottom - 3, bounds.Width + 10, 7);
-                DrawRectOutline(ring, Color.LimeGreen, 2);
-            }
+                DrawRectOutline(new Rectangle(bounds.X - 5, bounds.Bottom - 3, bounds.Width + 10, 7), Color.LimeGreen, 2);
             else if (isCombatTarget)
-            {
-                var ring = new Rectangle(bounds.X - 6, bounds.Bottom - 3, bounds.Width + 12, 7);
-                DrawRectOutline(ring, Color.OrangeRed, 2);
-            }
+                DrawRectOutline(new Rectangle(bounds.X - 6, bounds.Bottom - 3, bounds.Width + 12, 7), Color.OrangeRed, 2);
             else if (isEnemy)
-            {
-                var ring = new Rectangle(bounds.X - 3, bounds.Bottom - 2, bounds.Width + 6, 5);
-                DrawRectOutline(ring, Color.DarkRed * 0.7f, 1);
-            }
+                DrawRectOutline(new Rectangle(bounds.X - 3, bounds.Bottom - 2, bounds.Width + 6, 5), Color.DarkRed * 0.7f, 1);
 
-            // Tint de hit flash
             var hitFlash = entity.GetComponent<CombatStateComponent>()?.HitFlashTimer > 0f;
             var tint = hitFlash ? Color.Lerp(Color.White, Color.Red, 0.65f) : Color.White;
 
-            // Sprite animado (ou fallback geométrico)
             var sprite = entity.GetComponent<SpriteComponent>();
             if (sprite != null && sprite.Frames.Length > 0)
             {
                 var frame = sprite.Frames[Math.Clamp(sprite.CurrentFrame, 0, sprite.Frames.Length - 1)];
-
                 var destHeight = (int)(bounds.Height * 1.6f);
                 var destWidth = destHeight * frame.Width / frame.Height;
                 var dest = new Rectangle(
@@ -147,32 +138,30 @@ public class RenderSystem : ISystem
                 _spriteBatch.Draw(_pixelTexture, bounds, hitFlash ? Color.Red : render.Color);
             }
 
-            // Barra de HP: player, feridos, inimigos, ou alvo
             var stats = entity.GetComponent<UnitStatsComponent>();
             if (stats != null && (isSelected || isEnemy || isCombatTarget || stats.CurrentHealth < stats.MaxHealth))
-            {
                 DrawHealthBar(bounds, stats.CurrentHealth / stats.MaxHealth);
-            }
         }
 
-        // Caixa de seleção do mouse (por cima de tudo)
-        if (selectionBox.HasValue)
-        {
-            _spriteBatch.Draw(_pixelTexture, selectionBox.Value, Color.LimeGreen * 0.12f);
-            DrawRectOutline(selectionBox.Value, Color.LimeGreen, 1);
-        }
+        _spriteBatch.End();
 
-        // UI na tela: barra de HP do player e contador de NPCs
-        DrawUI(entityList);
-
+        // --- UI em espaço de tela (sem câmera) ---
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        DrawUI(entityList, debug);
         _spriteBatch.End();
     }
 
-    private void DrawTerrain()
+    private void DrawTerrain(Camera2D camera)
     {
-        var viewport = _graphicsDevice.Viewport;
-        for (int x = 0; x < viewport.Width; x += _terrainTile.Width)
-            for (int y = 0; y < viewport.Height; y += _terrainTile.Height)
+        var tile = _terrainTile.Width;
+        var view = camera.VisibleWorldBounds;
+        var startX = (view.X / tile) * tile - tile;
+        var startY = (view.Y / tile) * tile - tile;
+        var endX = view.Right + tile;
+        var endY = view.Bottom + tile;
+
+        for (int x = startX; x < endX; x += tile)
+            for (int y = startY; y < endY; y += tile)
                 _spriteBatch.Draw(_terrainTile, new Vector2(x, y), Color.White);
     }
 
@@ -206,25 +195,21 @@ public class RenderSystem : ISystem
         var pulse = (float)Math.Sin(_moveMarkerPulse) * 0.3f + 0.7f;
         var color = Color.LimeGreen * pulse;
         const int arm = 7;
-        const int thickness = 2;
-        
-        // Cruz com espessura
-        for (int i = 0; i < thickness; i++)
+
+        for (int i = 0; i < 2; i++)
         {
-            _spriteBatch.Draw(_pixelTexture, 
-                new Rectangle((int)center.X - arm, (int)center.Y - thickness/2 + i, arm * 2, 1), color);
-            _spriteBatch.Draw(_pixelTexture, 
-                new Rectangle((int)center.X - thickness/2 + i, (int)center.Y - arm, 1, arm * 2), color);
+            _spriteBatch.Draw(_pixelTexture,
+                new Rectangle((int)center.X - arm, (int)center.Y - 1 + i, arm * 2, 1), color);
+            _spriteBatch.Draw(_pixelTexture,
+                new Rectangle((int)center.X - 1 + i, (int)center.Y - arm, 1, arm * 2), color);
         }
-        
-        // Círculo externo pulsante
-        var circleRadius = 10 + (int)(pulse * 3);
-        DrawCircleOutline(center, circleRadius, color * 0.6f);
+
+        DrawCircleOutline(center, 10 + (int)(pulse * 3), color * 0.6f);
     }
-    
+
     private void DrawCircleOutline(Vector2 center, int radius, Color color)
     {
-        var points = 24;
+        const int points = 24;
         for (int i = 0; i < points; i++)
         {
             var angle = i * MathHelper.TwoPi / points;
@@ -233,62 +218,67 @@ public class RenderSystem : ISystem
             _spriteBatch.Draw(_pixelTexture, new Rectangle((int)x, (int)y, 2, 2), color);
         }
     }
-    
-    private void DrawUI(List<Entity> entities)
+
+    private void DrawUI(List<Entity> entities, DebugState debug)
     {
         var player = entities.FirstOrDefault(e => e.HasComponent<PlayerControlledComponent>());
-        if (player == null) return;
+        if (player != null)
+        {
+            var stats = player.GetComponent<UnitStatsComponent>();
+            if (stats != null)
+            {
+                var barX = 20;
+                var barY = 20;
+                var barWidth = 200;
+                var barHeight = 16;
 
-        var stats = player.GetComponent<UnitStatsComponent>();
-        if (stats == null) return;
+                var bgRect = new Rectangle(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+                _spriteBatch.Draw(_pixelTexture, bgRect, Color.Black * 0.7f);
 
-        // Barra de HP do player (canto superior esquerdo)
-        var barX = 20;
-        var barY = 20;
-        var barWidth = 200;
-        var barHeight = 16;
-        
-        var bgRect = new Rectangle(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
-        _spriteBatch.Draw(_pixelTexture, bgRect, Color.Black * 0.7f);
-        
-        var fillWidth = (int)(barWidth * (stats.CurrentHealth / stats.MaxHealth));
-        var hpRect = new Rectangle(barX, barY, fillWidth, barHeight);
-        
-        var hpColor = stats.CurrentHealth / stats.MaxHealth > 0.6f ? new Color(80, 220, 100)
-                    : stats.CurrentHealth / stats.MaxHealth > 0.3f ? new Color(255, 200, 50)
-                    : new Color(255, 80, 80);
-        
-        _spriteBatch.Draw(_pixelTexture, hpRect, hpColor);
-        _spriteBatch.Draw(_pixelTexture, 
-            new Rectangle(barX, barY, barWidth, barHeight), 
-            Color.Transparent);
-        DrawRectOutline(bgRect, Color.White * 0.8f, 1);
-        
-        // Contador de inimigos vivos (canto superior direito)
+                var fillWidth = (int)(barWidth * (stats.CurrentHealth / stats.MaxHealth));
+                var hpColor = stats.CurrentHealth / stats.MaxHealth > 0.6f ? new Color(80, 220, 100)
+                            : stats.CurrentHealth / stats.MaxHealth > 0.3f ? new Color(255, 200, 50)
+                            : new Color(255, 80, 80);
+
+                _spriteBatch.Draw(_pixelTexture, new Rectangle(barX, barY, fillWidth, barHeight), hpColor);
+                DrawRectOutline(bgRect, Color.White * 0.8f, 1);
+            }
+        }
+
         var enemyCount = entities.Count(e => e.GetComponent<TeamComponent>()?.Faction == "enemy");
-        var viewport = _graphicsDevice.Viewport;
-        var counterX = viewport.Width - 170;
-        var counterY = 20;
-
-        var counterBg = new Rectangle(counterX, counterY, 150, 24);
+        var counterX = _graphicsDevice.Viewport.Width - 170;
+        var counterBg = new Rectangle(counterX, 20, 150, 24);
         _spriteBatch.Draw(_pixelTexture, counterBg, Color.Black * 0.7f);
         DrawRectOutline(counterBg, Color.OrangeRed * 0.8f, 1);
 
-        // Bloco vermelho proporcional (indicador visual simples sem fonte)
         var fill = Math.Clamp(enemyCount, 0, 10);
         if (fill > 0)
-        {
-            _spriteBatch.Draw(_pixelTexture,
-                new Rectangle(counterX + 8, counterY + 6, fill * 13, 12),
-                Color.OrangeRed);
-        }
+            _spriteBatch.Draw(_pixelTexture, new Rectangle(counterX + 8, 26, fill * 13, 12), Color.OrangeRed);
+
+        if (debug.Enabled)
+            DrawDebugOverlay(debug, enemyCount, entities.Count);
     }
 
-    private void DrawMoveMarker(Vector2 center)
+    private void DrawDebugOverlay(DebugState debug, int enemyCount, int entityCount)
     {
-        var color = Color.LimeGreen * 0.8f;
-        const int arm = 6;
-        _spriteBatch.Draw(_pixelTexture, new Rectangle((int)center.X - arm, (int)center.Y - 1, arm * 2, 2), color);
-        _spriteBatch.Draw(_pixelTexture, new Rectangle((int)center.X - 1, (int)center.Y - arm, 2, arm * 2), color);
+        var panel = new Rectangle(20, 52, 280, 86);
+        _spriteBatch.Draw(_pixelTexture, panel, Color.Black * 0.75f);
+        DrawRectOutline(panel, Color.Yellow * 0.9f, 1);
+
+        // Indicador "DEBUG" (bloco amarelo)
+        _spriteBatch.Draw(_pixelTexture, new Rectangle(28, 60, 64, 10), Color.Gold);
+
+        // Barras de telemetria simples (sem fonte bitmap)
+        var fpsBar = Math.Clamp((int)(debug.Fps / 2f), 0, 60);
+        _spriteBatch.Draw(_pixelTexture, new Rectangle(28, 80, fpsBar * 4, 6), Color.Cyan);
+
+        var entBar = Math.Clamp(entityCount, 0, 40);
+        _spriteBatch.Draw(_pixelTexture, new Rectangle(28, 94, entBar * 6, 6), Color.LightGreen);
+
+        var modBar = Math.Clamp(debug.ModCount, 0, 10);
+        _spriteBatch.Draw(_pixelTexture, new Rectangle(28, 108, modBar * 20, 6), Color.Orange);
+
+        var enemyBar = Math.Clamp(enemyCount, 0, 20);
+        _spriteBatch.Draw(_pixelTexture, new Rectangle(28, 122, enemyBar * 10, 6), Color.OrangeRed);
     }
 }

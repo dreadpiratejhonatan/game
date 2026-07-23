@@ -17,8 +17,15 @@ Ou abra `ModularGameEngine.sln` no Visual Studio e pressione F5.
 |-------|------|
 | Clique no chão | Mover personagem |
 | Clique no inimigo | Perseguir e atacar |
-| Espaço | Spawn aleatório (debug) |
+| F1 | Toggle debug |
+| Espaço | Spawn aleatório (**só em debug**) |
 | ESC | Sair |
+
+**Smoke check** (sem abrir janela):
+
+```bash
+dotnet run -- --smoke
+```
 
 ## Filosofia
 
@@ -39,7 +46,9 @@ docs/           → documentação
 ```
 
 Detalhes: [docs/ORGANIZED_STRUCTURE.md](docs/ORGANIZED_STRUCTURE.md)  
-Criar mods: [docs/MODDING.md](docs/MODDING.md)
+Criar mods: [docs/MODDING.md](docs/MODDING.md)  
+Contrato estável: [docs/MOD_CONTRACT.md](docs/MOD_CONTRACT.md)  
+Contribuir features: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Mod rápido
 

@@ -3,7 +3,9 @@
 ## Essenciais
 
 - [ORGANIZED_STRUCTURE.md](ORGANIZED_STRUCTURE.md) — pastas e regras de manutenção
+- [MOD_CONTRACT.md](MOD_CONTRACT.md) — contrato estável de mods v1
 - [MODDING.md](MODDING.md) — como criar e carregar mods
+- [../CONTRIBUTING.md](../CONTRIBUTING.md) — checklist para novas features
 - [ARCHITECTURE.md](ARCHITECTURE.md) — visão ECS
 - [QUICK_REFERENCE.md](QUICK_REFERENCE.md) — snippets
 

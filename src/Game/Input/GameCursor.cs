@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using ModularGameEngine.Engine.Core;
 using ModularGameEngine.Engine.ECS;
 using ModularGameEngine.Game.Components;
 
@@ -34,10 +35,11 @@ public class GameCursor
         _attackCursor = BuildAttackCursor(device);
     }
 
-    public void Update(float deltaTime, World world, Point mousePosition)
+    public void Update(float deltaTime, World world, Camera2D camera, Point mousePosition)
     {
         _pulse += deltaTime * 6f;
-        Mode = IsOverHostile(world, mousePosition) ? CursorMode.Attack : CursorMode.Command;
+        var worldPoint = camera.ScreenToWorld(mousePosition);
+        Mode = IsOverHostile(world, worldPoint) ? CursorMode.Attack : CursorMode.Command;
     }
 
     public void Draw(SpriteBatch spriteBatch, Point mousePosition)
@@ -77,11 +79,12 @@ public class GameCursor
         }
     }
 
-    private static bool IsOverHostile(World world, Point point)
+    private static bool IsOverHostile(World world, Vector2 worldPoint)
     {
         var player = world.GetEntities()
             .FirstOrDefault(e => e.HasComponent<PlayerControlledComponent>());
         var playerFaction = player?.GetComponent<TeamComponent>()?.Faction ?? "player";
+        var point = new Point((int)worldPoint.X, (int)worldPoint.Y);
 
         foreach (var entity in world.GetEntities())
         {

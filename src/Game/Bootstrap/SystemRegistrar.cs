@@ -1,3 +1,4 @@
+using ModularGameEngine.Engine.Core;
 using ModularGameEngine.Engine.ECS;
 using ModularGameEngine.Game.Systems;
 
@@ -9,17 +10,22 @@ namespace ModularGameEngine.Game.Bootstrap;
 /// </summary>
 public static class SystemRegistrar
 {
-    public const int WorldWidth = 1280;
-    public const int WorldHeight = 720;
+    /// <summary>Tamanho da janela (pixels).</summary>
+    public const int ViewportWidth = 1280;
+    public const int ViewportHeight = 720;
 
-    public static void RegisterAll(World world)
+    /// <summary>Tamanho do mundo jogável (maior que a viewport → câmera).</summary>
+    public const int WorldWidth = 3200;
+    public const int WorldHeight = 2400;
+
+    public static void RegisterAll(World world, Camera2D camera)
     {
-        world.AddSystem(new MovementSystem());
+        world.AddSystem(new MovementSystem(WorldWidth, WorldHeight));
         world.AddSystem(new WanderSystem(WorldWidth, WorldHeight));
         world.AddSystem(new AnimationSystem());
         world.AddSystem(new ParticleSystem());
         world.AddSystem(new CombatSystem(world));
-        // Futuro: world.AddSystem(new CameraSystem());
+        world.AddSystem(new CameraSystem(camera));
         // Futuro: world.AddSystem(new InventorySystem());
         // Futuro: world.AddSystem(new SquadCommandSystem());
     }

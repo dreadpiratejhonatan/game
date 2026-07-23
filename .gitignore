@@ -19,7 +19,7 @@ Content/obj/
 
 # Development artifacts (não commitar)
 screenshots/
-scripts/
+# scripts/smoke.ps1 é versionado; outros temporários podem ficar locais
 
 # User-specific
 *.log
