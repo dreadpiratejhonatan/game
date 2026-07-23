@@ -1,0 +1,84 @@
+{
+  "units": [
+    {
+      "id": "soldier_basic",
+      "name": "Soldado Básico",
+      "description": "Unidade de infantaria básica, equilibrada em combate corpo a corpo.",
+      "faction": "ally",
+      "stats": {
+        "max_health": 100,
+        "move_speed": 120,
+        "attack_damage": 15,
+        "attack_range": 50,
+        "attack_cooldown": 0.7,
+        "detection_range": 220
+      },
+      "visual": {
+        "width": 32,
+        "height": 32,
+        "color": "#4A90E2",
+        "shape": "rectangle"
+      }
+    },
+    {
+      "id": "archer_basic",
+      "name": "Arqueiro Básico",
+      "description": "Unidade de ataque à distância, frágil mas com alcance maior.",
+      "faction": "ally",
+      "stats": {
+        "max_health": 60,
+        "move_speed": 100,
+        "attack_damage": 20,
+        "attack_range": 200,
+        "attack_cooldown": 1.0,
+        "detection_range": 280
+      },
+      "visual": {
+        "width": 28,
+        "height": 28,
+        "color": "#50C878",
+        "shape": "rectangle"
+      }
+    },
+    {
+      "id": "tank_heavy",
+      "name": "Tanque Pesado",
+      "description": "Unidade blindada inimiga com alto HP e dano, mas lenta.",
+      "faction": "enemy",
+      "stats": {
+        "max_health": 250,
+        "move_speed": 60,
+        "attack_damage": 35,
+        "attack_range": 75,
+        "attack_cooldown": 1.2,
+        "detection_range": 260
+      },
+      "visual": {
+        "width": 48,
+        "height": 48,
+        "color": "#E74C3C",
+        "shape": "rectangle"
+      }
+    },
+    {
+      "id": "scout_fast",
+      "name": "Batedor Rápido",
+      "description": "Criatura inimiga rápida e frágil.",
+      "faction": "enemy",
+      "stats": {
+        "max_health": 40,
+        "move_speed": 200,
+        "attack_damage": 8,
+        "attack_range": 35,
+        "attack_cooldown": 0.45,
+        "detection_range": 240
+      },
+      "visual": {
+        "width": 24,
+        "height": 24,
+        "color": "#F39C12",
+        "shape": "circle"
+      }
+    }
+  ]
+}

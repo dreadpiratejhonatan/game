@@ -1,0 +1,34 @@
+# Build results
+bin/
+obj/
+out/
+[Dd]ebug/
+[Rr]elease/
+
+# Visual Studio / Rider
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln.docstates
+
+# MonoGame
+Content/bin/
+Content/obj/
+
+# Development artifacts (não commitar)
+screenshots/
+scripts/
+
+# User-specific
+*.log
+*.tmp
+*.temp
+*~
+
+# System files
+Thumbs.db
+.DS_Store
+Desktop.ini
+$RECYCLE.BIN/

@@ -1,0 +1,8 @@
+{
+  "id": "base_mod",
+  "name": "Base Content",
+  "version": "0.2.0",
+  "author": "Modular Game Engine",
+  "description": "Conteúdo oficial do protótipo. Sempre carregado primeiro.",
+  "override_base": false
+}

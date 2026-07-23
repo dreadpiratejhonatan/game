@@ -1,0 +1,8 @@
+{
+  "id": "example_hostile_blob",
+  "name": "Example Hostile Blob",
+  "version": "1.0.0",
+  "author": "Community Template",
+  "description": "Mod de exemplo: adiciona uma unidade inimiga nova. Remova ou renomeie a pasta com prefixo _ para desativar.",
+  "override_base": true
+}

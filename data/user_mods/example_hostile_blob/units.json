@@ -1,0 +1,24 @@
+{
+  "units": [
+    {
+      "id": "mod_purple_blob",
+      "name": "Bolha Roxa",
+      "description": "Inimigo de exemplo criado por mod. Prove que o pipeline de mods funciona.",
+      "faction": "enemy",
+      "stats": {
+        "max_health": 55,
+        "move_speed": 150,
+        "attack_damage": 10,
+        "attack_range": 40,
+        "attack_cooldown": 0.55,
+        "detection_range": 230
+      },
+      "visual": {
+        "width": 26,
+        "height": 26,
+        "color": "#9B59B6",
+        "shape": "circle"
+      }
+    }
+  ]
+}
