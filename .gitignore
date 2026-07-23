@@ -1,9 +1,9 @@
-# Build results
+# Build results (não ignorar src/Game/Debug — código-fonte)
 bin/
 obj/
 out/
-[Dd]ebug/
-[Rr]elease/
+**/bin/
+**/obj/
 
 # Visual Studio / Rider
 .vs/
